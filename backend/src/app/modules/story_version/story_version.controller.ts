@@ -139,7 +139,8 @@ const enhancePrompt = catchAsync(async (req: Request, res: Response) => {
     );
   }
 
-  const enhancedPrompt = await StoryVersionService.enhancePrompt(prompt.trim());
+  const provider = req.headers["x-model-provider"] as string | undefined;
+  const enhancedPrompt = await StoryVersionService.enhancePrompt(prompt.trim(), provider);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

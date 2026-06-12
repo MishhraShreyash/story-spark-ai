@@ -80,7 +80,7 @@ const CharacterNetwork = ({ storyId }: CharacterNetworkProps) => {
 
     // 1. Filter characters by search name
     const matchedChars = rawCharacters.filter((char) =>
-      char.name.toLowerCase().includes(searchLower)
+    searchLower !== "" && char.name.toLowerCase().includes(searchLower)
     );
     const matchedCharIds = new Set(matchedChars.map((c) => c.id));
 

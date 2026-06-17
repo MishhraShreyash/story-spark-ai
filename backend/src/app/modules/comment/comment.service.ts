@@ -6,6 +6,7 @@ import httpStatus from "http-status";
 import { Comment } from "./comment.model";
 import { Types } from "mongoose";
 import { Post } from "../post/post.model";
+import { assertContentSafe } from "../../../utils/contentModeration";
 
 const createComment = async (
   payload: ICommentPayload,
@@ -22,6 +23,14 @@ const createComment = async (
   });
   if (!post) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Post not found!");
+  }
+
+  // Content moderation — block inappropriate comments before persisting
+  try {
+    assertContentSafe(payload.comment);
+  } catch (moderationError) {
+    const msg = moderationError instanceof Error ? moderationError.message : "Comment blocked by content moderation.";
+    throw new ApiError(httpStatus.UNPROCESSABLE_ENTITY, msg);
   }
   // Use an atomic $inc update instead of the read-modify-write pattern.
   // With concurrent requests, both would read the same commentsCount value

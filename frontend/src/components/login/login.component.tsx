@@ -1,6 +1,6 @@
 import { useState, useContext } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import SSInput from "../ui-component/ss-input/ss-input";
 import SSButton from "../ui-component/ss-button/ss-button";
 import { motion } from "framer-motion";
@@ -23,6 +23,8 @@ const LoginComponent = () => {
   const [loginUser] = useLoginUserMutation();
   const [googleLogin] = useGoogleLoginMutation();
 
+  const navigate = useNavigate();
+
   const {
     register,
     handleSubmit,
@@ -31,18 +33,21 @@ const LoginComponent = () => {
 
   const { login } = useContext(AuthContext) ?? { login: () => {} };
   const [isBusy, setIsBusy] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
+ 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setIsBusy(true);
     try {
       const res = await loginUser(data).unwrap();
 
-      if (res.data.accessToken) {
-        toast.success("User logged in successfully!");
-        login(res.data.accessToken);
-        setIsLoggedIn(true);
-      }
+     if (res.data.accessToken) {
+  toast.success("User logged in successfully with Google!");
+
+  login(res.data.accessToken);
+
+  setTimeout(() => {
+    navigate("/dashboard", { replace: true });
+  }, 100);
+}
     } catch {
       toast.error("Login failed. Please check your credentials.");
     } finally {
@@ -61,10 +66,12 @@ const LoginComponent = () => {
       }).unwrap();
 
       if (res.data.accessToken) {
-        toast.success("User logged in successfully with Google!");
-        login(res.data.accessToken);
-        setIsLoggedIn(true);
-      }
+  toast.success("User logged in successfully with Google!");
+
+  login(res.data.accessToken);
+
+  navigate("/dashboard", { replace: true });
+}
     } catch {
       toast.error("Failed to login with Google. Please try again.");
     } finally {
@@ -76,9 +83,6 @@ const LoginComponent = () => {
     toast.error("Google login failed. Please try again.");
   };
 
-  if (isLoggedIn) {
-    return <RedirectComponent defaultPath="/dashboard" />;
-  }
 
   return (
     <div className="min-h-screen w-full bg-white dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 flex items-center justify-center relative overflow-hidden px-4 py-8 sm:px-6 lg:px-8 box-border">

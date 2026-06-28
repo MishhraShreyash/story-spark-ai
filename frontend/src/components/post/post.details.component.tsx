@@ -7,7 +7,6 @@ import {
   useGetPostByIdQuery,
   useGetPostByTagQuery,
   useUpdatePostMutation,
-  useForkStoryMutation,
 } from "../../redux/apis/post.api";
 import RelatedStoriesComponent from "./related.stories.view.component";
 import PostCommentComponent from "./post.comment.component";
@@ -40,11 +39,12 @@ import {
   useGetStoryTreeQuery,
   useCreateBranchVersionMutation,
 } from "../../redux/apis/storyVersion.api";
-import AddToCollectionModal from "../collections/AddToCollectionModal";
 
 import { toast } from "react-hot-toast";
 import StoryTranslator from "../translate/StoryTranslator";
 import { IStories } from "../stories/stories.view.component";
+
+
 
 interface IStoryVersion {
   _id: string;
@@ -75,8 +75,8 @@ const PostDetailsComponent = () => {
     {
       skip: !tag,
     }
-  );
-
+);
+  
   const [toggleReaction] = useToggleReactionMutation();
   const [deletePost, { isLoading: isDeleting }] = useDeletePostMutation();
   const currentUser = getUserInfo();
@@ -97,17 +97,17 @@ const PostDetailsComponent = () => {
   const isFollowing = followData?.isFollowing ?? false;
 
   useEffect(() => {
-    const updateProgress = () => {
-      const article = articleRef.current;
-      if (!article) return;
-      const { top, height } = article.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-      const scrolled = Math.max(0, -top);
-      const total = Math.max(1, height - windowHeight);
-      setReadingProgress(Math.min(100, (scrolled / total) * 100));
-    };
-    window.addEventListener("scroll", updateProgress, { passive: true });
-    return () => window.removeEventListener("scroll", updateProgress);
+  const updateProgress = () => {
+    const article = articleRef.current;
+    if (!article) return;
+    const { top, height } = article.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    const scrolled = Math.max(0, -top);
+    const total = Math.max(1, height - windowHeight);
+    setReadingProgress(Math.min(100, (scrolled / total) * 100));
+  };
+  window.addEventListener("scroll", updateProgress, { passive: true });
+  return () => window.removeEventListener("scroll", updateProgress);
   }, []);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -119,11 +119,9 @@ const PostDetailsComponent = () => {
   const [selectedVersionForBranch, setSelectedVersionForBranch] = useState<string | null>(null);
   const [showComparison, setShowComparison] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
-  const [showCollectionModal, setShowCollectionModal] = useState(false);
   const [showTranslator, setShowTranslator] = useState(false);
 
   const [updatePost, { isLoading: isUpdating }] = useUpdatePostMutation();
-  const [forkStory, { isLoading: isForking }] = useForkStoryMutation();
   const readerPreferences = useReaderPreferences();
   const { data: versions, isLoading: isLoadingVersions } = useGetVersionsByStoryIdQuery(id || "", {
     skip: !id || (!showTimeline && !showComparison),
@@ -139,7 +137,7 @@ const PostDetailsComponent = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const { data: storyTree } = useGetStoryTreeQuery(id || "", { skip: !id || !showTree });
+  const { data: storyTree } = useGetStoryTreeQuery(id || "", { skip: !id || !showTree,});
 
   const [createBranchVersion] = useCreateBranchVersionMutation();
 
@@ -170,7 +168,7 @@ const PostDetailsComponent = () => {
       toast.error("You need to login to perform this action");
     }
   };
-
+  
   const handleSaveChanges = async () => {
     if (!id) return;
     if (!editedTitle.trim() || !editedContent.trim()) {
@@ -194,23 +192,6 @@ const PostDetailsComponent = () => {
     }
   };
 
-  const handleFork = async () => {
-    if (!currentUser) {
-      toast.error("You need to login to fork this story");
-      return;
-    }
-    if (!id) return;
-    try {
-      const res = await forkStory(id).unwrap();
-      toast.success("Story forked! You can now edit your draft.");
-      navigate(`/post/${res.data._id}`);
-      window.scrollTo(0, 0);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to fork story.");
-    }
-  };
-
   const handleRestore = async (versionId: string) => {
     const confirmRestore = window.confirm(
       "Are you sure you want to restore this version? Your current version will be saved as a snapshot first."
@@ -227,23 +208,24 @@ const PostDetailsComponent = () => {
     }
   };
 
-  const handleCreateBranch = async (versionId: string) => {
-    const branchName = window.prompt("Enter a branch name");
+  const handleCreateBranch = async (versionId: string) => {const branchName = window.prompt("Enter a branch name");
 
-    if (!branchName?.trim()) {
-      return;
-    }
+  if (!branchName?.trim()) {
+    return;
+  }
 
-    try {
-      await createBranchVersion({ versionId, branchName }).unwrap();
+  try {
+    await createBranchVersion({versionId, branchName,}).unwrap();
 
-      toast.success("Branch created successfully!");
-    } catch (error) {
-      console.error(error);
+    toast.success("Branch created successfully!");
+  } catch (error) {
+    console.error(error);
 
-      toast.error("Failed to create branch");
-    }
-  };
+    toast.error(
+      "Failed to create branch"
+    );
+  }
+};
 
   const hasUserReacted = post?.reactions?.some((r) => {
     const userId = r.userId;
@@ -288,26 +270,26 @@ const PostDetailsComponent = () => {
   };
 
   const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard!");
-      setShowShareMenu(false);
-    } catch {
-      toast.error("Failed to copy link.");
-    }
-  };
+  try {
+    await navigator.clipboard.writeText(window.location.href);
+    toast.success("Link copied to clipboard!");
+    setShowShareMenu(false);
+  } catch {
+    toast.error("Failed to copy link.");
+  }
+};
 
   const handleWhatsAppShare = () => {
-    const currentUrl = window.location.href;
-    const currentTitle = post?.title || "Check out this story!";
+  const currentUrl = window.location.href;
+  const currentTitle = post?.title || "Check out this story!";
 
-    const url = `https://wa.me/?text=${encodeURIComponent(
-      `${currentTitle} ${currentUrl}`
-    )}`;
+  const url = `https://wa.me/?text=${encodeURIComponent(
+    `${currentTitle} ${currentUrl}`
+  )}`;
 
-    window.open(url, "_blank", "noopener,noreferrer");
-    setShowShareMenu(false);
-  };
+  window.open(url, "_blank", "noopener,noreferrer");
+  setShowShareMenu(false);
+};
 
   const handleDelete = async () => {
     if (
@@ -334,6 +316,7 @@ const PostDetailsComponent = () => {
 
   return (
     <div className="min-h-screen bg-white text-slate-900 transition-colors duration-300 dark:bg-[#0b1329] dark:text-white relative">
+
       {/* OG Meta Tags for social sharing */}
       <StoryMetaTags
         title={post?.title}
@@ -369,10 +352,7 @@ const PostDetailsComponent = () => {
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center space-x-4">
                 {post?.author?._id ? (
-                  <Link
-                    to={`/profile/${post.author._id}`}
-                    className="flex items-center shrink-0 hover:opacity-85 transition"
-                  >
+                  <Link to={`/profile/${post.author._id}`} className="flex items-center shrink-0 hover:opacity-85 transition">
                     <SSProfile
                       name={post?.author?.name || "Unknown User"}
                       size="h-12 w-12"
@@ -388,10 +368,7 @@ const PostDetailsComponent = () => {
                 <div>
                   <h3 className="font-medium text-slate-700 dark:text-gray-400">
                     {post?.author?._id ? (
-                      <Link
-                        to={`/profile/${post.author._id}`}
-                        className="hover:text-indigo-650 dark:hover:text-indigo-400 transition"
-                      >
+                      <Link to={`/profile/${post.author._id}`} className="hover:text-indigo-650 dark:hover:text-indigo-400 transition">
                         {post?.author?.name || "Unknown User"}
                       </Link>
                     ) : (
@@ -402,16 +379,6 @@ const PostDetailsComponent = () => {
                   <div className="flex items-center text-sm text-slate-500 dark:text-gray-500">
                     <span>{formatDateShort(post ? post?.createdAt : "")}</span>
                   </div>
-                  {post?.parentStoryId && (
-                    <div className="mt-1">
-                      <Link
-                        to={`/post/${post.parentStoryId._id}`}
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full hover:bg-emerald-500/20 transition-colors border border-emerald-500/20 shadow-sm"
-                      >
-                        🌱 Forked from {post.parentStoryId.author?.name || "Unknown"}'s story
-                      </Link>
-                    </div>
-                  )}
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -453,14 +420,6 @@ const PostDetailsComponent = () => {
                 >
                   ✏️ Edit Story
                 </button>
-                {post?.isPublished && (
-                  <button
-                    onClick={() => setShowCollectionModal(true)}
-                    className="flex items-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:opacity-90 rounded-lg transition-all active:scale-95 cursor-pointer font-semibold shadow-md"
-                  >
-                    📚 Add to Collection
-                  </button>
-                )}
                 <button
                   onClick={() => setShowTimeline(true)}
                   className="flex items-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:opacity-90 rounded-lg transition-all active:scale-95 cursor-pointer font-semibold shadow-md"
@@ -478,13 +437,9 @@ const PostDetailsComponent = () => {
 
             {isEditing ? (
               <div className="space-y-4 mb-12 bg-slate-900/40 border border-slate-700/50 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-slate-200">
-                  ✏️ Edit Story Iteration
-                </h3>
+                <h3 className="text-lg font-bold text-slate-200">✏️ Edit Story Iteration</h3>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">
-                    STORY TITLE
-                  </label>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">STORY TITLE</label>
                   <input
                     type="text"
                     value={editedTitle}
@@ -493,9 +448,7 @@ const PostDetailsComponent = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">
-                    STORY CONTENT
-                  </label>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">STORY CONTENT</label>
                   <textarea
                     value={editedContent}
                     onChange={(e) => setEditedContent(e.target.value)}
@@ -521,20 +474,12 @@ const PostDetailsComponent = () => {
               </div>
             ) : (
               <>
-                <h1
-                  className={`text-4xl font-bold text-slate-900 dark:text-gray-300 leading-tight ${
-                    post?.language ? "mb-2" : "mb-4"
-                  }`}
-                >
+                <h1 className={`text-4xl font-bold text-slate-900 dark:text-gray-300 leading-tight ${post?.language ? "mb-2" : "mb-4"}`}>
                   {post?.title}
                 </h1>
-
+                
                 <div className="flex items-center gap-4 mb-6 flex-wrap">
-                  <StarRatingDisplay
-                    rating={post?.averageRating || 0}
-                    totalRatings={post?.totalRatings || 0}
-                    size="md"
-                  />
+                  <StarRatingDisplay rating={post?.averageRating || 0} totalRatings={post?.totalRatings || 0} size="md" />
                   {post?.language && (
                     <div className="flex gap-2">
                       <span className="inline-flex items-center rounded-full bg-blue-950/60 text-blue-300 border border-blue-700/50 py-1 px-3 text-xs font-semibold">
@@ -554,11 +499,12 @@ const PostDetailsComponent = () => {
                     className="w-full h-[400px] object-cover rounded-lg shadow-md"
                   />
                 </div>
-                <ReaderPreferencesPanel {...readerPreferences} className="mb-6" />
+                <ReaderPreferencesPanel
+                  {...readerPreferences}
+                  className="mb-6"
+                />
 
-                <div
-                  className={`prose mx-auto mb-12 whitespace-pre-wrap break-words text-slate-700 dark:text-gray-300 ${readerPreferences.readerClassName}`}
-                >
+                <div className={`prose mx-auto mb-12 whitespace-pre-wrap break-words text-slate-700 dark:text-gray-300 ${readerPreferences.readerClassName}`}>
                   <p>{post?.content}</p>
                 </div>
 
@@ -580,7 +526,9 @@ const PostDetailsComponent = () => {
                       : "text-slate-600 hover:text-slate-900 dark:text-gray-600 dark:hover:text-gray-400"
                   }`}
                 >
-                  <i className={`${hasUserReacted ? "fas" : "far"} fa-heart`}></i>
+                  <i
+                    className={`${hasUserReacted ? "fas" : "far"} fa-heart`}
+                  ></i>
 
                   <span>{post?.likesCount}</span>
                 </button>
@@ -592,67 +540,57 @@ const PostDetailsComponent = () => {
                   />
                 )}
               </div>
-              <div className="relative flex items-center gap-2">
-                {currentUser && !isOwner && post?.isPublished && (
-                  <button
-                    onClick={handleFork}
-                    disabled={isForking}
-                    className="px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-500 transition disabled:opacity-50 flex items-center gap-1.5 shadow-sm text-sm"
-                  >
-                    {isForking ? "Forking..." : "🌱 Fork"}
-                  </button>
-                )}
-                
-                <div className="relative flex items-center gap-2">
-                  <button
-                    onClick={() => setShowShareMenu(!showShareMenu)}
-                    className="px-3 py-2 rounded bg-slate-700 text-white hover:bg-slate-600 transition flex items-center gap-1.5 shadow-sm text-sm"
-                  >
-                    🔗 Share
-                  </button>
-                  <button
-                    onClick={() => setShowTranslator(true)}
-                    className="px-3 py-2 rounded bg-emerald-700 text-white hover:bg-emerald-600 transition flex items-center gap-1.5 shadow-sm text-sm"
-                  >
-                    🌍 Translate
-                  </button>
+              <div className="relative">
+  <button
+    onClick={() => setShowShareMenu(!showShareMenu)}
+    className="px-3 py-2 rounded bg-slate-700 text-white hover:bg-slate-600 transition"
+  >
+    🔗 Share
+  </button>
+  <button
+    onClick={() => setShowTranslator(true)}
+    className="px-3 py-2 rounded bg-emerald-700 text-white hover:bg-emerald-600 transition ml-2"
+  >
+    🌍 Translate
+  </button>
 
-                  {showShareMenu && (
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50">
-                      <button
-                        onClick={handleCopyLink}
-                        className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-t-lg"
-                      >
-                        📋 Copy Link
-                      </button>
+  {showShareMenu && (
+    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50">
+      <button
+        onClick={handleCopyLink}
+        className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700"
+      >
+        📋 Copy Link
+      </button>
 
-                      <button
-                        onClick={handleTwitterShare}
-                        className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700"
-                      >
-                        🐦 Share on X
-                      </button>
+      <button
+        onClick={handleTwitterShare}
+        className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700"
+      >
+        🐦 Share on X
+      </button>
 
-                      <button
-                        onClick={handleWhatsAppShare}
-                        className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700"
-                      >
-                        💬 WhatsApp
-                      </button>
+      <button
+        onClick={handleWhatsAppShare}
+        className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700"
+      >
+        💬 WhatsApp
+      </button>
 
-                      <button
-                        onClick={handleEmailShare}
-                        className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-b-lg"
-                      >
-                        ✉️ Email
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
+      <button
+        onClick={handleEmailShare}
+        className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700"
+      >
+        ✉️ Email
+      </button>
+    </div>
+  )}
+</div>
             </div>
 
-            {id && currentUser && !isOwner && <StoryRatingInput storyId={id} />}
+            {id && currentUser && !isOwner && (
+              <StoryRatingInput storyId={id} />
+            )}
 
             {id && (
               <div className="mb-12">
@@ -661,21 +599,21 @@ const PostDetailsComponent = () => {
             )}
 
             <div>
-              <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-gray-300">
-                Related Stories
-              </h3>
+  <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-gray-300">
+    Related Stories
+  </h3>
 
-              {relatedPost && relatedPost.length > 0 ? (
-                <RelatedStoriesComponent
-                  posts={relatedPost}
-                  currentPostId={post?._id || ""}
-                />
-              ) : (
-                <div className="text-center py-8 text-slate-500 dark:text-gray-400">
-                  <p>No related stories found.</p>
-                </div>
-              )}
-            </div>
+  {relatedPost && relatedPost.length > 0 ? (
+    <RelatedStoriesComponent
+      posts={relatedPost}
+      currentPostId={post?._id || ""}
+    />
+  ) : (
+    <div className="text-center py-8 text-slate-500 dark:text-gray-400">
+      <p>No related stories found.</p>
+    </div>
+  )}
+</div>
           </div>
         </div>
       </div>
@@ -683,6 +621,7 @@ const PostDetailsComponent = () => {
       {showTimeline && (
         <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#0f172a]/95 backdrop-blur-xl border-l border-slate-700/60 shadow-2xl p-6 overflow-y-auto text-white animate-slide-in flex flex-col">
           <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-800">
+            
             <button
               onClick={() => setShowTimeline(false)}
               className="w-8 h-8 rounded-full bg-slate-850 border border-slate-750 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-all cursor-pointer"
@@ -715,30 +654,17 @@ const PostDetailsComponent = () => {
             {isLoadingVersions ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
-                <p className="text-slate-400 text-sm">
-                  Loading version timeline...
-                </p>
+                <p className="text-slate-400 text-sm">Loading version timeline...</p>
               </div>
             ) : versions && versions.length > 0 ? (
               <div className="relative border-l border-slate-800 pl-4 ml-2 space-y-6">
                 {versions.map((v: IStoryVersion) => {
-                  let badgeColor =
-                    "bg-slate-800 text-slate-300 border-slate-700";
-                  if (v.generationType === "edited")
-                    badgeColor =
-                      "bg-amber-500/10 text-amber-400 border-amber-500/30";
-                  else if (v.generationType === "regenerated")
-                    badgeColor =
-                      "bg-blue-500/10 text-blue-400 border-blue-500/30";
-                  else if (v.generationType === "alternate-ending")
-                    badgeColor =
-                      "bg-purple-500/10 text-purple-400 border-purple-500/30";
-                  else if (v.generationType === "restored")
-                    badgeColor =
-                      "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
-                  else if (v.generationType === "pre-restoration")
-                    badgeColor =
-                      "bg-rose-500/10 text-rose-400 border-rose-500/30";
+                  let badgeColor = "bg-slate-800 text-slate-300 border-slate-700";
+                  if (v.generationType === "edited") badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/30";
+                  else if (v.generationType === "regenerated") badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/30";
+                  else if (v.generationType === "alternate-ending") badgeColor = "bg-purple-500/10 text-purple-400 border-purple-500/30";
+                  else if (v.generationType === "restored") badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+                  else if (v.generationType === "pre-restoration") badgeColor = "bg-rose-500/10 text-rose-400 border-rose-500/30";
 
                   return (
                     <div key={v._id} className="relative group">
@@ -749,9 +675,7 @@ const PostDetailsComponent = () => {
                             <span className="text-[10px] font-bold text-slate-500 block">
                               VERSION #{v.versionNumber}
                             </span>
-                            <span
-                              className={`inline-block text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border mt-1 ${badgeColor}`}
-                            >
+                            <span className={`inline-block text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border mt-1 ${badgeColor}`}>
                               {v.generationType}
                             </span>
                           </div>
@@ -773,9 +697,7 @@ const PostDetailsComponent = () => {
                           </div>
                         </div>
 
-                        <h4 className="text-sm font-bold text-slate-200 mb-1">
-                          {v.title}
-                        </h4>
+                        <h4 className="text-sm font-bold text-slate-200 mb-1">{v.title}</h4>
                         <p className="text-xs text-slate-400 leading-relaxed line-clamp-3 bg-slate-950/40 p-2.5 rounded-lg border border-slate-900/60 font-light select-all">
                           {v.content}
                         </p>
@@ -797,12 +719,9 @@ const PostDetailsComponent = () => {
             ) : (
               <div className="text-center py-12 px-4 border border-dashed border-slate-800 rounded-2xl bg-slate-950/20">
                 <span className="text-3xl block mb-2">📜</span>
-                <h4 className="font-bold text-slate-300 mb-1 text-sm">
-                  No Iterations Saved Yet
-                </h4>
+                <h4 className="font-bold text-slate-300 mb-1 text-sm">No Iterations Saved Yet</h4>
                 <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
-                  Direct edits or alternate ending selections will create
-                  auto-snapshots here!
+                  Direct edits or alternate ending selections will create auto-snapshots here!
                 </p>
               </div>
             )}
@@ -838,7 +757,9 @@ const PostDetailsComponent = () => {
             </div>
 
             {!storyTree ? (
-              <div className="text-slate-400">Loading...</div>
+              <div className="text-slate-400">
+                Loading...
+              </div>
             ) : (
               <div className="space-y-3">
                 {storyTree.nodes.map((node) => (
@@ -850,7 +771,9 @@ const PostDetailsComponent = () => {
                       Version #{node.versionNumber}
                     </div>
 
-                    <div>{node.title}</div>
+                    <div>
+                      {node.title}
+                    </div>
 
                     {node.branchName && (
                       <div className="text-purple-400 text-sm">
@@ -865,27 +788,27 @@ const PostDetailsComponent = () => {
         </div>
       )}
 
-      <div className="absolute top-[-200px] left-[250px] w-[800px] h-[350px] bg-blue-500/20 rounded-full blur-3xl -z-10 pointer-events-none"></div>
-
-      {showCollectionModal && id && currentUser && (
-        <AddToCollectionModal
-          storyId={id}
-          userId={currentUser.userId}
-          onClose={() => setShowCollectionModal(false)}
-        />
+      {showComparison && (
+        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-3xl bg-white dark:bg-[#0f172a]/95 backdrop-blur-xl border-l border-slate-200 dark:border-slate-700/60 shadow-2xl p-6 overflow-y-auto text-slate-900 dark:text-white animate-slide-in flex flex-col">
+          <ComparisonMode
+            versions={versions || []}
+            isLoadingVersions={isLoadingVersions}
+            onClose={() => setShowComparison(false)}
+          />
+        </div>
       )}
+
+      <div className="absolute top-[-200px] left-[250px] w-[800px] h-[350px] bg-blue-500/20 rounded-full blur-3xl -z-10 pointer-events-none"></div>
 
       {showTranslator && post && (
         <StoryTranslator
-          story={
-            {
-              uuid: post._id || "",
-              title: post.title || "",
-              content: post.content || "",
-              tag: post.tag || "",
-              imageURL: post.imageURL || "",
-            } as IStories
-          }
+          story={{
+            uuid: post._id || "",
+            title: post.title || "",
+            content: post.content || "",
+            tag: post.tag || "",
+            imageURL: post.imageURL || "",
+          } as IStories}
           isLogin={isLoggedIn()}
           onClose={() => setShowTranslator(false)}
         />
